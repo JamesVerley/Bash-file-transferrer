@@ -7,9 +7,6 @@ read port
 echo "send? yes/no"
 read send
 
-
-
-
 if [ $send = "yes" ]
 then
 	echo yes
