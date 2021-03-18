@@ -70,7 +70,7 @@ else
 
 	if [ $encrypt = "n" ] || [ $encrypt = "y" ] && [ $decrypt = "n" ]
 	then
-		if [ $keep_encrypted = "n" ]
+		if [ $decrypt = "n" ]
 		then
 			echo "receive compressed? y/n"
 			read compression
