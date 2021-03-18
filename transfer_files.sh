@@ -1,44 +1,36 @@
 #!/bin/bash
 
-echo "current directory '"$(pwd)"'"
 echo "enter port"
 read port
 
-echo "send? yes/no"
+echo "send? y/n"
 read send
 
-echo "encryption? yes/no"
+echo "encrypt? y/n"
 read encrypt
 
-if [ $send = "yes" ]
+if [ $send = "y" ]
 then
 	while ! [ -d "transfer_files" ]
 	do
 		mkdir transfer_files
-		echo "place files to be sent in the 'transfer_files' directory\nEnter to continue"
+		echo "place files to be sent in the 'transfer_files' directory..."
 		read
 	done
 
-	echo "Enter address"
+	echo "Enter ipv4 address"
 	read address
 
-	if [ $encrypt = "yes" ]
+	if [ $encrypt = "y" ]
 	then
-		echo "passphrase:"
-		read passphrase
-	fi
-
-	if [ $encrypt = "yes" ]
-	then
-		tar -czvf - transfer_files | gpg --passphrase $passphrase --batch --quiet --yes -ca | pv | netcat $address $port
+		echo "encryption_key:"
+		read encryption_key
+		tar -czvf - transfer_files | gpg --passphrase $encryption_key --batch --quiet --yes -ca | pv | netcat $address $port
 	else
 		tar -czvf - transfer_files | pv | netcat $address $port
 	fi
 	
 else
-
-
-	# echo "waiting/receiving"
 	file_suffix=0
 
 	# Ensure target filename unique
@@ -47,20 +39,25 @@ else
 		file_suffix=$(($file_suffix+1))
 	done
 
-	if [ $encrypt = "yes" ]
+	if [ $encrypt = "y" ]
 	then
-		echo "receive encrypted? yes/no"
-		read keep_encrypted
+		echo "decrypt? y/n"
+		read decrypt
 
-		if [ $keep_encrypted = "no" ]
+		if [ $decrypt = "y" ]
 		then
-			echo "key:"
-			read passphrase
+			echo "decryption_key: "
+			read decryption_key
 
-			echo "receive compressed? yes/no"
+			# save key temporarily and load into gpg
+			echo $decryption_key > "keyfile"
+			gpg --import "keyfile"
+			rm "keyfile"
+
+			echo "receive compressed? y/n"
 			read compression
 
-			if [ $compression = "no" ]
+			if [ $compression = "n" ]
 			then
 				mkdir "received$file_suffix"
 				cd "received$file_suffix"
@@ -71,17 +68,17 @@ else
 		fi
 	fi
 
-	if [ $encrypt = "no" ] || [ $encrypt = "yes" ] && [ $keep_encrypted = "yes" ]
+	if [ $encrypt = "n" ] || [ $encrypt = "y" ] && [ $decrypt = "n" ]
 	then
-		if [ $keep_encrypted = "no" ]
+		if [ $keep_encrypted = "n" ]
 		then
-			echo "receive compressed? yes/no"
+			echo "receive compressed? y/n"
 			read compression
 		else
-			compression="no"
+			compression="n"
 		fi
 
-		if [ $compression = "no" ]
+		if [ $compression = "n" ]
 		then
 			mkdir "received$file_suffix"
 			cd "received$file_suffix"
