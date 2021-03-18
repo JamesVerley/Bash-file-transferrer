@@ -7,7 +7,7 @@ read port
 echo "send? yes/no"
 read send
 
-echo "encrypt(ed)? yes/no"
+echo "encryption? yes/no"
 read encrypt
 
 if [ $send = "yes" ]
@@ -36,8 +36,7 @@ then
 	fi
 	
 else
-	echo "receive compressed? yes/no"
-	read compression
+
 
 	# echo "waiting/receiving"
 	file_suffix=0
@@ -55,23 +54,40 @@ else
 
 		if [ $keep_encrypted = "no" ]
 		then
-			echo "passphrase:"
+			echo "key:"
 			read passphrase
+
+			echo "receive compressed? yes/no"
+			read compression
+
+			if [ $compression = "no" ]
+			then
+				mkdir "received$file_suffix"
+				cd "received$file_suffix"
+				netcat -l -p $port | pv | gpg --decrypt - | tar -xzvf -
+			else
+				netcat -l -p $port | pv | gpg --decrypt - > "received$file_suffix.tar.gz"
+			fi
 		fi
 	fi
 
-	# 1. if received compressed
-	# 2. if encrypt and keep_encrypted
-	# 3. if not encrypted and received compressed
-	# 4. if not encrypted and received decompressed
+	if [ $encrypt = "no" ] || [ $encrypt = "yes" ] && [ $keep_encrypted = "yes" ]
+	then
+		if [ $keep_encrypted = "no" ]
+		then
+			echo "receive compressed? yes/no"
+			read compression
+		else
+			compression="no"
+		fi
 
-	# 	if [ $compression = "no" ]
-	# 	then
-	# 		mkdir "received$file_suffix"
-	# 		cd "received$file_suffix"
-	# 		netcat -l -p $port | pv | tar -xzvf -
-	# 	else
-	# 		netcat -l -p $port | pv > "received$file_suffix.tar.gz"
-	# 	fi
-	# fi
+		if [ $compression = "no" ]
+		then
+			mkdir "received$file_suffix"
+			cd "received$file_suffix"
+			netcat -l -p $port | pv | tar -xzvf -
+		else
+			netcat -l -p $port | pv > "received$file_suffix.tar.gz"
+		fi
+	fi
 fi
